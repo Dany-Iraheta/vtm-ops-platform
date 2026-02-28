@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VTM Campaign Hub</title>
+  </head>
+  <body>
+    <h1>VTM Campaign Hub</h1>
+
+    <section>
+      <h2>Add Note</h2>
+      <input id="campaignId" placeholder="campaignId (e.g. toronto-by-night)" value="toronto-by-night" />
+      <input id="author" placeholder="author" value="Dany" />
+      <br/><br/>
+      <textarea id="text" placeholder="note text" rows="4" cols="60"></textarea>
+      <br/>
+      <button id="add">Add Note</button>
+    </section>
+
+    <section>
+      <h2>Notes</h2>
+      <button id="refresh">Refresh</button>
+      <pre id="out"></pre>
+    </section>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
