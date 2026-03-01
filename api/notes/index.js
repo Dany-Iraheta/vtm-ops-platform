@@ -87,8 +87,17 @@ module.exports = async function (context, req) {
             const now = new Date().toISOString();
 
             await table.createEntity({
-                partitionKey: campaignId,
-                rowKey: id,
+                const principal = getClientPrincipal(req);
+
+                if(!principal?.userRoles?.includes("authenticated")) {
+                context.res = { status: 401, body: { error: "Login required" } };
+                return;
+            }
+
+            if (method === "POST" && !principal.userRoles.includes("Storyteller")) {
+                context.res = { status: 403, body: { error: "Storyteller role required", roles: principal.userRoles } };
+                return;
+            }                rowKey: id,
                 author,
                 text,
                 createdAt: now

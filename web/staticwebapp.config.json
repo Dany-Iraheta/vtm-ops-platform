@@ -5,8 +5,12 @@
   },
   "routes": [
     {
+      "route": "/api/*",
+      "allowedRoles": [ "authenticated" ]
+    },
+    {
       "route": "/admin/*",
-      "allowedRoles": [ "Storyteller" ]
+      "allowedRoles": [ "authenticated" ]
     },
     {
       "route": "/*",
