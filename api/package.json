@@ -1,18 +1,12 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "description": "",
-  "main": "src/index.js",
+  "private": true,
   "scripts": {
-    "start": "func start",
-    "test": "echo \"No tests yet...\""
+    "start": "func start"
   },
   "dependencies": {
     "@azure/data-tables": "^13.3.2",
-    "@azure/functions": "^4.0.0",
     "uuid": "^13.0.0"
-  },
-  "engines": {
-    "node": "20.x"
   }
 }
