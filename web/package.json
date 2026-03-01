@@ -15,5 +15,8 @@
   "type": "commonjs",
   "dependencies": {
     "vite": "^7.3.1"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
