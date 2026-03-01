@@ -2,24 +2,25 @@ const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
 
 function getClientPrincipal(req) {
-    const header =
-        (req.headers && (req.headers["x-ms-client-principal"] || req.headers["X-MS-CLIENT-PRINCIPAL"])) ||
-        null;
+    const header = req.headers?.["x-ms-client-principal"];
     if (!header) return null;
-
-    const decoded = Buffer.from(header, "base64").toString("utf8");
-    return JSON.parse(decoded);
+    try {
+        const decoded = Buffer.from(header, "base64").toString("utf8");
+        return JSON.parse(decoded);
+    } catch {
+        return null;
+    }
 }
 
 function isAuthenticated(principal) {
-    if (!principal?.userRoles) return false;
-    // SWA includes these automatically; "anonymous" means not logged in
-    return principal.userRoles.includes("authenticated") && !principal.userRoles.includes("anonymous");
+    // SWA may include "anonymous" even when logged in; "authenticated" is the real signal
+    return Array.isArray(principal?.userRoles) && principal.userRoles.includes("authenticated");
 }
 
 function hasRole(principal, role) {
     return Array.isArray(principal?.userRoles) && principal.userRoles.includes(role);
 }
+
 function getEnv(name) {
     const v = process.env[name];
     if (!v) throw new Error(`Missing env var: ${name}`);
@@ -34,22 +35,17 @@ function getTableClient() {
 
 module.exports = async function (context, req) {
     try {
-        const table = getTableClient();
-        await table.createTable();
-
-        const method = (req.method || "GET").toUpperCase();
-
         const principal = getClientPrincipal(req);
 
+        // Auth required for all API calls (route rule should already enforce this, but keep server-side guard)
         if (!principal || !isAuthenticated(principal)) {
             context.res = { status: 401, body: { error: "Login required" } };
             return;
         }
 
-        if (method === "POST" && !hasRole(principal, "Storyteller")) {
-            context.res = { status: 403, body: { error: "Storyteller role required" } };
-            return;
-        }
+        const method = (req.method || "GET").toUpperCase();
+        const table = getTableClient();
+        await table.createTable();
 
         if (method === "GET") {
             const campaignId = (req.query.campaignId || "").trim();
@@ -77,6 +73,13 @@ module.exports = async function (context, req) {
         }
 
         if (method === "POST") {
+            // Role enforcement: only Storyteller can POST
+            // NOTE: This will only work once Storyteller role is actually present in userRoles.
+            if (!hasRole(principal, "Storyteller")) {
+                context.res = { status: 403, body: { error: "Storyteller role required", roles: principal.userRoles } };
+                return;
+            }
+
             const { campaignId, author, text } = req.body || {};
             if (!campaignId || !author || !text) {
                 context.res = { status: 400, body: { error: "campaignId, author, text are required" } };
@@ -87,17 +90,8 @@ module.exports = async function (context, req) {
             const now = new Date().toISOString();
 
             await table.createEntity({
-                const principal = getClientPrincipal(req);
-
-                if(!principal?.userRoles?.includes("authenticated")) {
-                context.res = { status: 401, body: { error: "Login required" } };
-                return;
-            }
-
-            if (method === "POST" && !principal.userRoles.includes("Storyteller")) {
-                context.res = { status: 403, body: { error: "Storyteller role required", roles: principal.userRoles } };
-                return;
-            }                rowKey: id,
+                partitionKey: campaignId,
+                rowKey: id,
                 author,
                 text,
                 createdAt: now
