@@ -5,12 +5,12 @@
   },
   "routes": [
     {
-      "route": "/*",
-      "allowedRoles": [ "authenticated" ]
-    },
-    {
       "route": "/admin/*",
       "allowedRoles": [ "Storyteller" ]
+    },
+    {
+      "route": "/*",
+      "allowedRoles": [ "authenticated" ]
     }
   ],
   "responseOverrides": {
