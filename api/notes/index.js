@@ -1,6 +1,25 @@
 const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
 
+function getClientPrincipal(req) {
+    const header =
+        (req.headers && (req.headers["x-ms-client-principal"] || req.headers["X-MS-CLIENT-PRINCIPAL"])) ||
+        null;
+    if (!header) return null;
+
+    const decoded = Buffer.from(header, "base64").toString("utf8");
+    return JSON.parse(decoded);
+}
+
+function isAuthenticated(principal) {
+    if (!principal?.userRoles) return false;
+    // SWA includes these automatically; "anonymous" means not logged in
+    return principal.userRoles.includes("authenticated") && !principal.userRoles.includes("anonymous");
+}
+
+function hasRole(principal, role) {
+    return Array.isArray(principal?.userRoles) && principal.userRoles.includes(role);
+}
 function getEnv(name) {
     const v = process.env[name];
     if (!v) throw new Error(`Missing env var: ${name}`);
@@ -19,6 +38,18 @@ module.exports = async function (context, req) {
         await table.createTable();
 
         const method = (req.method || "GET").toUpperCase();
+
+        const principal = getClientPrincipal(req);
+
+        if (!principal || !isAuthenticated(principal)) {
+            context.res = { status: 401, body: { error: "Login required" } };
+            return;
+        }
+
+        if (method === "POST" && !hasRole(principal, "Storyteller")) {
+            context.res = { status: 403, body: { error: "Storyteller role required" } };
+            return;
+        }
 
         if (method === "GET") {
             const campaignId = (req.query.campaignId || "").trim();
