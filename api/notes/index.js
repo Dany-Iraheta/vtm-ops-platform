@@ -33,6 +33,41 @@ function getTableClient() {
     return TableClient.fromConnectionString(conn, tableName);
 }
 
+async function getEffectiveRoles(req) {
+    // Prefer x-ms-original-url (present in SWA → Functions) so we get the correct origin
+    const originalUrl =
+        req.headers?.["x-ms-original-url"] ||
+        req.headers?.["X-MS-ORIGINAL-URL"];
+
+    const origin = originalUrl
+        ? new URL(originalUrl).origin
+        : `https://${req.headers?.host}`;
+
+    // Forward auth context so SWA resolves roles for the *same user*
+    const cookie = req.headers?.cookie || "";
+    const authorization = req.headers?.authorization || "";
+
+    const r = await fetch(`${origin}/api/getRolesForUsers`, {
+        method: "GET",
+        headers: {
+            cookie,
+            authorization
+        }
+    });
+
+    const text = await r.text();
+    if (!r.ok) throw new Error(`Role API ${r.status}: ${text}`);
+
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        throw new Error(`Role API returned non-JSON: ${text}`);
+    }
+
+    return Array.isArray(data.roles) ? data.roles : [];
+}
+
 module.exports = async function (context, req) {
     try {
         const principal = getClientPrincipal(req);
@@ -74,12 +109,14 @@ module.exports = async function (context, req) {
 
         if (method === "POST") {
             // Only Storyteller can POST
-            if (!hasRole(principal, "Storyteller")) {
+            const effectiveRoles = await getEffectiveRoles(req);
+
+            if (!effectiveRoles.includes("Storyteller")) {
                 context.res = {
                     status: 403,
                     body: {
                         error: "Storyteller role required",
-                        roles: principal.userRoles,
+                        roles: effectiveRoles,
                         user: principal.userDetails
                     }
                 };
