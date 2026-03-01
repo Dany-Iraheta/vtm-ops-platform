@@ -1,6 +1,15 @@
 const { app } = require("@azure/functions");
 const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
+const principal = getClientPrincipal(request);
+
+if (!principal) {
+    return { status: 401, jsonBody: { error: "Login required" } };
+}
+
+if (request.method === "POST" && !hasRole(principal, "Storyteller")) {
+    return { status: 403, jsonBody: { error: "Storyteller role required" } };
+}
 
 function mustGet(name) {
   const v = process.env[name];
@@ -12,6 +21,17 @@ function getTableClient() {
   const conn = mustGet("STORAGE_CONNECTION_STRING");
   const tableName = mustGet("TABLE_NOTES_NAME");
   return TableClient.fromConnectionString(conn, tableName);
+}
+function getClientPrincipal(request) {
+    const header = request.headers.get("x-ms-client-principal");
+    if (!header) return null;
+    const decoded = Buffer.from(header, "base64").toString("utf8");
+    return JSON.parse(decoded);
+}
+
+function hasRole(principal, role) {
+    if (!principal?.userRoles) return false;
+    return principal.userRoles.includes(role);
 }
 
 app.http("notes", {
