@@ -5,6 +5,10 @@
   },
   "routes": [
     {
+      "route": "/api/getRolesForUsers",
+      "allowedRoles": [ "anonymous", "authenticated" ]
+    },
+    {
       "route": "/api/*",
       "allowedRoles": [ "authenticated" ]
     },
