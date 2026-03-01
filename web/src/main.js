@@ -1,4 +1,6 @@
 const apiBase = "/api"; // works with Static Web Apps routing later
+const loginUrl = "/.auth/login/aad";
+const logoutUrl = "/.auth/logout?post_logout_redirect_uri=/";
 
 async function refresh() {
   const campaignId = document.querySelector("#campaignId").value.trim();
@@ -23,6 +25,8 @@ async function addNote() {
   await refresh();
   return data;
 }
+
+window.vtmAuth = { loginUrl, logoutUrl };
 
 document.querySelector("#refresh").addEventListener("click", refresh);
 document.querySelector("#add").addEventListener("click", addNote);
