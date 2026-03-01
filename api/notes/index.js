@@ -73,10 +73,16 @@ module.exports = async function (context, req) {
         }
 
         if (method === "POST") {
-            // Role enforcement: only Storyteller can POST
-            // NOTE: This will only work once Storyteller role is actually present in userRoles.
+            // Only Storyteller can POST
             if (!hasRole(principal, "Storyteller")) {
-                context.res = { status: 403, body: { error: "Storyteller role required", roles: principal.userRoles } };
+                context.res = {
+                    status: 403,
+                    body: {
+                        error: "Storyteller role required",
+                        roles: principal.userRoles,
+                        user: principal.userDetails
+                    }
+                };
                 return;
             }
 
