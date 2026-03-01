@@ -1,6 +1,22 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/*.{css,js,png,jpg,jpeg,gif,svg,ico,txt,woff,woff2}"]
+    "exclude": [ "/api/*", "/*.{css,js,png,jpg,jpeg,gif,svg,ico,txt,woff,woff2}" ]
+  },
+  "routes": [
+    {
+      "route": "/*",
+      "allowedRoles": [ "authenticated" ]
+    },
+    {
+      "route": "/admin/*",
+      "allowedRoles": [ "Storyteller" ]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad",
+      "statusCode": 302
+    }
   }
 }
