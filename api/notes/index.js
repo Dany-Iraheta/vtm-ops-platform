@@ -1,5 +1,7 @@
 const { TableClient } = require("@azure/data-tables");
 const { v4: uuidv4 } = require("uuid");
+const { DefaultAzureCredential } = require("@azure/identity");
+
 
 function getClientPrincipal(req) {
     const header = req.headers?.["x-ms-client-principal"];
@@ -28,9 +30,13 @@ function getEnv(name) {
 }
 
 function getTableClient() {
-    const conn = getEnv("STORAGE_CONNECTION_STRING");
-    const tableName = getEnv("TABLE_NOTES_NAME");
-    return TableClient.fromConnectionString(conn, tableName);
+    const account = getEnv("STORAGE_ACCOUNT_NAME"); // stvtmops15682
+    const tableName = getEnv("TABLE_NOTES_NAME");   // notes
+
+    const credential = new DefaultAzureCredential();
+    const url = `https://${account}.table.core.windows.net`;
+
+    return new TableClient(url, tableName, credential);
 }
 
 async function getEffectiveRoles(req) {
