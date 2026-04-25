@@ -1,12 +1,13 @@
-context.res = {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-    body: { roles }
-}; function getClientPrincipal(req) {
+function getClientPrincipal(req) {
     const header = req.headers?.["x-ms-client-principal"];
     if (!header) return null;
-    const decoded = Buffer.from(header, "base64").toString("utf8");
-    return JSON.parse(decoded);
+
+    try {
+        const decoded = Buffer.from(header, "base64").toString("utf8");
+        return JSON.parse(decoded);
+    } catch {
+        return null;
+    }
 }
 
 module.exports = async function (context, req) {
@@ -28,10 +29,4 @@ module.exports = async function (context, req) {
     if (email === "vtm-player@dannyirahetaoutlook.onmicrosoft.com") roles.push("Player");
 
     context.res = { status: 200, body: { roles } };
-};
-
-context.res = {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-    body: { roles }
 };
